@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "description": {
+      "description": "A brief description of your website",
+      "maxLength": 500,
+      "title": "Page Description",
+      "type": "string"
+    },
+    "sections": {
+      "description": "Various content sections of your website",
+      "properties": {
+        "about": {
+          "description": "Information about you or your organization",
+          "properties": {
+            "content": {
+              "description": "Main content for the about section",
+              "format": "textarea",
+              "title": "About Content",
+              "type": "string"
+            },
+            "title": {
+              "description": "Title for the about section",
+              "title": "About Title",
+              "type": "string"
+            }
+          },
+          "title": "About Section",
+          "type": "object"
+        },
+        "contact": {
+          "description": "Contact information and details",
+          "properties": {
+            "address": {
+              "description": "Physical address",
+              "format": "textarea",
+              "title": "Address",
+              "type": "string"
+            },
+            "email": {
+              "description": "Contact email address",
+              "format": "email",
+              "title": "Email Address",
+              "type": "string"
+            },
+            "phone": {
+              "description": "Contact phone number",
+              "title": "Phone Number",
+              "type": "string"
+            },
+            "title": {
+              "description": "Title for the contact section",
+              "title": "Contact Title",
+              "type": "string"
+            }
+          },
+          "title": "Contact Section",
+          "type": "object"
+        },
+        "hero": {
+          "description": "The main hero/banner section",
+          "properties": {
+            "content": {
+              "description": "Main content text for the hero section",
+              "format": "textarea",
+              "title": "Hero Content",
+              "type": "string"
+            },
+            "subtitle": {
+              "description": "Subtitle or tagline for the hero section",
+              "title": "Hero Subtitle",
+              "type": "string"
+            },
+            "title": {
+              "description": "Main headline for the hero section",
+              "title": "Hero Title",
+              "type": "string"
+            }
+          },
+          "title": "Hero Section",
+          "type": "object"
+        }
+      },
+      "title": "Content Sections",
+      "type": "object"
+    },
+    "title": {
+      "description": "The main title of your website",
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Page Title",
+      "type": "string"
+    }
+  }
+}
