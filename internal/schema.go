@@ -500,3 +500,39 @@ func (sm *SchemaManager) GetEnumFields() (map[string][]interface{}, error) {
 
 	return analysis.EnumFields, nil
 }
+
+// ValidateContentDetailed validates content using the comprehensive schema validator
+func (sm *SchemaManager) ValidateContentDetailed(content interface{}) (*ValidationResult, error) {
+	schema, err := sm.LoadSchema()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load schema: %w", err)
+	}
+
+	validator := NewSchemaValidator(schema)
+	result := validator.ValidateContent(content)
+	return result, nil
+}
+
+// ValidateFieldValueDetailed validates a single field value using the comprehensive validator
+func (sm *SchemaManager) ValidateFieldValueDetailed(fieldName string, value interface{}) (*ValidationResult, error) {
+	schema, err := sm.LoadSchema()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load schema: %w", err)
+	}
+
+	validator := NewSchemaValidator(schema)
+	result := validator.ValidateFieldValue(fieldName, value)
+	return result, nil
+}
+
+// GenerateValidationReport generates a detailed validation report for content
+func (sm *SchemaManager) GenerateValidationReport(content interface{}) (map[string]interface{}, error) {
+	schema, err := sm.LoadSchema()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load schema: %w", err)
+	}
+
+	validator := NewSchemaValidator(schema)
+	report := validator.GenerateValidationReport(content)
+	return report, nil
+}

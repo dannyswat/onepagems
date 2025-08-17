@@ -93,6 +93,11 @@ func (s *Server) setupRoutes() {
 	s.Mux.HandleFunc("/admin/schema/required-fields", s.AuthManager.RequireAuth(s.handleSchemaRequiredFields))
 	s.Mux.HandleFunc("/admin/schema/validate-field", s.AuthManager.RequireAuth(s.handleSchemaValidateField))
 
+	// Schema validator endpoints (protected)
+	s.Mux.HandleFunc("/admin/schema/validate-content", s.AuthManager.RequireAuth(s.handleSchemaValidateContent))
+	s.Mux.HandleFunc("/admin/schema/validate-field-detailed", s.AuthManager.RequireAuth(s.handleSchemaValidateFieldDetailed))
+	s.Mux.HandleFunc("/admin/schema/validation-report", s.AuthManager.RequireAuth(s.handleSchemaValidationReport))
+
 	// Authentication status endpoints (protected)
 	s.Mux.HandleFunc("/admin/auth/status", s.AuthManager.RequireAuth(s.handleAuthStatus))
 	s.Mux.HandleFunc("/admin/auth/sessions", s.AuthManager.RequireAuth(s.handleAuthSessions))
@@ -132,6 +137,9 @@ func (s *Server) setupRoutes() {
 	log.Println("  GET  /admin/schema/field-types - Get field types mapping")
 	log.Println("  GET  /admin/schema/required-fields - Get required/optional fields")
 	log.Println("  POST /admin/schema/validate-field - Validate single field value")
+	log.Println("  POST /admin/schema/validate-content - Comprehensive content validation")
+	log.Println("  POST /admin/schema/validate-field-detailed - Detailed field validation")
+	log.Println("  POST /admin/schema/validation-report - Generate validation report")
 	log.Println("  GET  /admin/auth/status - Authentication status")
 	log.Println("  GET  /admin/auth/sessions - List active sessions")
 	log.Println("  POST /admin/auth/change-password - Change password")
@@ -1534,4 +1542,88 @@ func (s *Server) handleSchemaValidateField(w http.ResponseWriter, r *http.Reques
 		"field":    requestData.FieldName,
 		"value":    requestData.Value,
 	})
+}
+
+// handleSchemaValidateContent validates entire content using comprehensive validator
+func (s *Server) handleSchemaValidateContent(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var requestData struct {
+		Content interface{} `json:"content"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+		return
+	}
+
+	validationResult, err := s.SchemaManager.ValidateContentDetailed(requestData.Content)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to validate content: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(validationResult)
+}
+
+// handleSchemaValidateFieldDetailed validates a field value using comprehensive validator
+func (s *Server) handleSchemaValidateFieldDetailed(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var requestData struct {
+		FieldName string      `json:"field_name"`
+		Value     interface{} `json:"value"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+		return
+	}
+
+	if requestData.FieldName == "" {
+		http.Error(w, "Field name is required", http.StatusBadRequest)
+		return
+	}
+
+	validationResult, err := s.SchemaManager.ValidateFieldValueDetailed(requestData.FieldName, requestData.Value)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to validate field: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(validationResult)
+}
+
+// handleSchemaValidationReport generates a comprehensive validation report
+func (s *Server) handleSchemaValidationReport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var requestData struct {
+		Content interface{} `json:"content"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+		return
+	}
+
+	report, err := s.SchemaManager.GenerateValidationReport(requestData.Content)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to generate validation report: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(report)
 }

@@ -9,7 +9,7 @@ echo "🧪 Testing OnePage CMS Schema Parser (Step 4.1)"
 echo "================================================"
 
 # Configuration
-BASE_URL="http://localhost:8888"
+BASE_URL="http://localhost:8080"
 SESSION_ID=""
 
 # Function to login and get session

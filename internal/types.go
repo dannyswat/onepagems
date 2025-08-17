@@ -75,6 +75,13 @@ type ValidationError struct {
 	Code    string `json:"code"`
 }
 
+// ValidationWarning represents a non-critical validation issue
+type ValidationWarning struct {
+	Field   string `json:"field"`
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
 // APIResponse represents a standard API response
 type APIResponse struct {
 	Success bool                   `json:"success"`
