@@ -49,6 +49,7 @@ func (s *Server) setupRoutes() {
 	s.Mux.HandleFunc("/admin/schema/import", s.AuthManager.RequireAuth(s.handleSchemaImport))
 	s.Mux.HandleFunc("/admin/schema/validate", s.AuthManager.RequireAuth(s.handleSchemaValidate))
 	s.Mux.HandleFunc("/admin/schema/form", s.AuthManager.RequireAuth(s.handleSchemaForm))
+	s.Mux.HandleFunc("/admin/schema/form-fields", s.AuthManager.RequireAuth(s.handleSchemaFormFields))
 	s.Mux.HandleFunc("/admin/test-schema", s.AuthManager.RequireAuth(s.handleTestSchema))
 
 	// Schema parser endpoints (protected)
@@ -95,7 +96,8 @@ func (s *Server) setupRoutes() {
 	log.Println("  GET  /admin/schema/export - Export schema")
 	log.Println("  POST /admin/schema/import - Import schema")
 	log.Println("  POST /admin/schema/validate - Validate data against schema")
-	log.Println("  GET  /admin/schema/form - Generate form from schema")
+	log.Println("  GET  /admin/schema/form - Generate complete form from schema")
+	log.Println("  GET  /admin/schema/form-fields - Generate form fields from schema")
 	log.Println("  POST /admin/test-schema - Test schema operations")
 	log.Println("  GET  /admin/schema/analyze - Comprehensive schema analysis")
 	log.Println("  GET  /admin/schema/field-metadata - Get field metadata (query: field)")

@@ -183,14 +183,14 @@ func (s *Server) handleSchemaValidate(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// handleSchemaForm generates form fields from schema
+// handleSchemaForm generates complete form structure from schema
 func (s *Server) handleSchemaForm(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	fields, err := s.SchemaManager.GenerateFormFromSchema()
+	form, err := s.SchemaManager.GenerateCompleteForm()
 	if err != nil {
 		response := types.NewAPIResponse(false, "Failed to generate form from schema: "+err.Error())
 		w.Header().Set("Content-Type", "application/json")
@@ -199,14 +199,33 @@ func (s *Server) handleSchemaForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form := types.GeneratedForm{
-		Fields: fields,
-		Action: "/admin/content",
-		Method: "POST",
-	}
-
 	response := types.NewAPIResponse(true, "Form generated from schema")
 	response.SetData(form)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// handleSchemaFormFields generates just the form fields array from schema
+func (s *Server) handleSchemaFormFields(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	fields, err := s.SchemaManager.GenerateFormFromSchema()
+	if err != nil {
+		response := types.NewAPIResponse(false, "Failed to generate form fields from schema: "+err.Error())
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	response := types.NewAPIResponse(true, "Form fields generated from schema")
+	response.SetData(map[string]interface{}{
+		"fields": fields,
+		"count":  len(fields),
+	})
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }

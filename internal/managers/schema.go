@@ -328,24 +328,33 @@ func (sm *SchemaManager) ImportSchema(data []byte) error {
 	return sm.SaveSchema(&schema)
 }
 
-// GenerateFormFromSchema generates form field definitions from the schema
+// GenerateFormFromSchema generates form field definitions from the schema using the comprehensive form generator
 func (sm *SchemaManager) GenerateFormFromSchema() ([]types.FormField, error) {
 	schema, err := sm.LoadSchema()
 	if err != nil {
 		return nil, err
 	}
 
-	var fields []types.FormField
-
-	// Generate fields from schema properties
-	for propName, propData := range schema.Properties {
-		if propMap, ok := propData.(map[string]interface{}); ok {
-			field := sm.createFormFieldFromProperty(propName, propMap)
-			fields = append(fields, field)
-		}
+	// Use the comprehensive form generator
+	formGenerator := NewFormGenerator(schema)
+	form, err := formGenerator.GenerateForm()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate form: %w", err)
 	}
 
-	return fields, nil
+	return form.Fields, nil
+}
+
+// GenerateCompleteForm generates a complete form structure from the schema
+func (sm *SchemaManager) GenerateCompleteForm() (*types.GeneratedForm, error) {
+	schema, err := sm.LoadSchema()
+	if err != nil {
+		return nil, err
+	}
+
+	// Use the comprehensive form generator
+	formGenerator := NewFormGenerator(schema)
+	return formGenerator.GenerateForm()
 }
 
 // createtypes.FormFieldFromProperty creates a form field from a schema property
