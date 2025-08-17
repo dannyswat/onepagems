@@ -1,6 +1,6 @@
 {
-  "title": "Welcome to OnePage CMS",
-  "description": "Test description updated at 2025-08-17T14:09:33+08:00",
+  "title": "Enhanced Test",
+  "description": "Testing auto-save functionality",
   "sections": {
     "about": {
       "content": "Tell your visitors about yourself or your organization.",
@@ -15,8 +15,8 @@
     "hero": {
       "content": "This is the main hero section of your website. You can edit this content through the admin panel.",
       "subtitle": "Welcome to your new website",
-      "title": "Your Website Title"
+      "title": "Hero Title"
     }
   },
-  "last_updated": "2025-08-17T14:09:33.256899+08:00"
+  "last_updated": "2025-08-17T15:41:23.581778+08:00"
 }

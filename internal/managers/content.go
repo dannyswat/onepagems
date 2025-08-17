@@ -3,6 +3,7 @@ package managers
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"onepagems/internal/types"
@@ -114,6 +115,64 @@ func (cm *ContentManager) UpdateContent(updates map[string]interface{}) error {
 
 	// Save updated content
 	return cm.SaveContent(content)
+}
+
+// UpdateContentFlexible updates content with flexible nested field support for auto-save
+func (cm *ContentManager) UpdateContentFlexible(updates map[string]interface{}) error {
+	// Load current content
+	content, err := cm.LoadContent()
+	if err != nil {
+		return fmt.Errorf("failed to load current content: %w", err)
+	}
+
+	// Convert content to map for flexible updates
+	contentMap := make(map[string]interface{})
+	contentMap["title"] = content.Title
+	contentMap["description"] = content.Description
+	contentMap["sections"] = content.Sections
+
+	// Apply nested updates
+	for key, value := range updates {
+		cm.setNestedValue(contentMap, key, value)
+	}
+
+	// Convert back to content structure
+	if title, ok := contentMap["title"].(string); ok {
+		content.Title = title
+	}
+	if description, ok := contentMap["description"].(string); ok {
+		content.Description = description
+	}
+	if sections, ok := contentMap["sections"].(map[string]interface{}); ok {
+		content.Sections = sections
+	}
+
+	// Save updated content
+	return cm.SaveContent(content)
+}
+
+// setNestedValue sets a value in a nested map using dot notation
+func (cm *ContentManager) setNestedValue(obj map[string]interface{}, path string, value interface{}) {
+	keys := strings.Split(path, ".")
+	current := obj
+
+	// Navigate to the parent of the target key
+	for i := 0; i < len(keys)-1; i++ {
+		key := keys[i]
+		if _, exists := current[key]; !exists {
+			current[key] = make(map[string]interface{})
+		}
+		if nested, ok := current[key].(map[string]interface{}); ok {
+			current = nested
+		} else {
+			// If the current value is not a map, replace it with a map
+			current[key] = make(map[string]interface{})
+			current = current[key].(map[string]interface{})
+		}
+	}
+
+	// Set the final value
+	current[keys[len(keys)-1]] = value
 }
 
 // BackupContent creates a backup of the current content

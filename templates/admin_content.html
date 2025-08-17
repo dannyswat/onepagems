@@ -1,0 +1,863 @@
+<h1 class="page-title">Content Editor</h1>
+<p class="page-subtitle">Edit your website content using the form generated from your schema</p>
+
+<div id="content-alerts"></div>
+
+<div class="card">
+    <div class="card-header">
+        📝 Content Form
+        <div style="float: right;">
+            <button onclick="previewContent()" class="btn">👁️ Preview</button>
+            <button onclick="resetContent()" class="btn btn-danger">🔄 Reset</button>
+        </div>
+    </div>
+    
+    <form id="content-form" onsubmit="saveContent(event)">
+        <div id="form-fields">
+            <!-- Form fields will be dynamically generated here -->
+            <div style="text-align: center; padding: 2rem;">
+                <div class="loading"></div>
+                <p>Loading form fields...</p>
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">💾 Save Content</button>
+            <button type="button" onclick="loadContent()" class="btn">🔄 Reload</button>
+            <button type="button" onclick="validateContent()" class="btn btn-primary">✅ Validate</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">ℹ️ Content Information</div>
+    <div id="content-info">
+        <p><strong>Last Updated:</strong> <span id="last-updated">Loading...</span></p>
+        <p><strong>Total Fields:</strong> <span id="field-count">Loading...</span></p>
+        <p><strong>Schema Version:</strong> <span id="schema-version">Loading...</span></p>
+        <p><strong>Validation Status:</strong> <span id="validation-status">Loading...</span></p>
+    </div>
+</div>
+
+<style>
+.form-field {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 5px;
+    background: #f8f9fa;
+}
+
+.form-field.nested {
+    margin-left: 2rem;
+    border-left: 3px solid #667eea;
+    background: #f0f2f5;
+}
+
+.form-field label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.form-field.required label::after {
+    content: " *";
+    color: #dc3545;
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.form-field input:focus,
+.form-field textarea:focus,
+.form-field select:focus {
+    border-color: #667eea;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.form-field .help-text {
+    font-size: 0.875rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.validation-error {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.image-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.image-picker input {
+    flex: 1;
+}
+
+.image-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.image-preview-container {
+    text-align: center;
+    padding: 1rem;
+    border: 2px dashed #ddd;
+    border-radius: 5px;
+    background: #f9f9f9;
+}
+
+.image-preview {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.image-preview:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.richtext-container {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.richtext-toolbar {
+    background: #f5f5f5;
+    padding: 0.5rem;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    gap: 0.25rem;
+}
+
+.format-btn {
+    background: white;
+    border: 1px solid #ddd;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background 0.2s;
+}
+
+.format-btn:hover {
+    background: #e9ecef;
+}
+
+.richtext {
+    border: none;
+    resize: vertical;
+    min-height: 150px;
+}
+
+.richtext-preview {
+    padding: 1rem;
+    background: white;
+    border-top: 1px solid #ddd;
+    min-height: 150px;
+}
+
+.richtext-preview.hidden {
+    display: none;
+}
+
+.multiselect {
+    min-height: 120px;
+}
+
+.object-field {
+    border: 2px dashed #667eea;
+    padding: 1rem;
+    border-radius: 5px;
+    background: #f8f9fc;
+}
+
+.object-field h4 {
+    color: #667eea;
+    margin-bottom: 1rem;
+}
+
+.image-browser-modal,
+.image-preview-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: auto;
+    position: relative;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.image-placeholder {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+}
+
+.form-field input.error,
+.form-field textarea.error,
+.form-field select.error {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+}
+
+.auto-save-indicator.saving {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.auto-save-indicator.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.auto-save-indicator.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+</style>
+
+<script>
+let currentContent = {};
+let formSchema = {};
+
+async function loadContentForm() {
+    try {
+        // Load the form structure from schema
+        const formData = await apiCall('/admin/schema/form');
+        formSchema = formData.data;
+        
+        // Load current content
+        const contentData = await apiCall('/admin/content');
+        currentContent = contentData.data || {};
+        
+        // Generate form HTML
+        renderForm(formSchema.fields);
+        
+        // Setup enhanced auto-save
+        setupEnhancedAutoSave('content-form', '/admin/content/auto-save');
+        
+        // Setup real-time validation
+        setupRealTimeValidation();
+        
+    } catch (error) {
+        showFormAlert('Failed to load content form: ' + error.message, 'error');
+    }
+}
+
+function setupRealTimeValidation() {
+    const form = document.getElementById('content-form');
+    if (!form) return;
+    
+    const inputs = form.querySelectorAll('input, textarea, select');
+    inputs.forEach(input => {
+        input.addEventListener('blur', async () => {
+            await validateField(input.name, input.value);
+        });
+    });
+}
+
+function renderForm(fields) {
+    const container = document.getElementById('form-fields');
+    container.innerHTML = '';
+    
+    fields.forEach(field => {
+        const fieldElement = createFieldElement(field);
+        container.appendChild(fieldElement);
+    });
+    
+    updateContentInfo();
+}
+
+function createFieldElement(field) {
+    const div = document.createElement('div');
+    div.className = `form-field ${field.required ? 'required' : ''} ${field.name.includes('.') ? 'nested' : ''}`;
+    
+    let fieldHTML = '';
+    const value = getNestedValue(currentContent, field.name) || field.value || '';
+    
+    // Field label and description
+    fieldHTML += `<label for="${field.name}">${field.label}</label>`;
+    if (field.description) {
+        fieldHTML += `<div class="help-text">${field.description}</div>`;
+    }
+    
+    // Generate input based on field type
+    switch (field.type) {
+        case 'textarea':
+            fieldHTML += `<textarea name="${field.name}" id="${field.name}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}>${value}</textarea>`;
+            break;
+            
+        case 'email':
+            fieldHTML += `<input type="email" name="${field.name}" id="${field.name}" value="${value}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}>`;
+            break;
+            
+        case 'number':
+            fieldHTML += `<input type="number" name="${field.name}" id="${field.name}" value="${value}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}>`;
+            break;
+            
+        case 'checkbox':
+            fieldHTML += `<input type="checkbox" name="${field.name}" id="${field.name}" ${value ? 'checked' : ''}>`;
+            break;
+            
+        case 'select':
+            fieldHTML += `<select name="${field.name}" id="${field.name}" ${field.required ? 'required' : ''}>`;
+            fieldHTML += `<option value="">Choose an option...</option>`;
+            if (field.options) {
+                field.options.forEach(option => {
+                    fieldHTML += `<option value="${option}" ${value === option ? 'selected' : ''}>${option}</option>`;
+                });
+            }
+            fieldHTML += `</select>`;
+            break;
+            
+        case 'multiselect':
+            fieldHTML += `<select name="${field.name}" id="${field.name}" multiple class="multiselect">`;
+            if (field.options) {
+                const selectedValues = Array.isArray(value) ? value : [];
+                field.options.forEach(option => {
+                    fieldHTML += `<option value="${option}" ${selectedValues.includes(option) ? 'selected' : ''}>${option}</option>`;
+                });
+            }
+            fieldHTML += `</select>`;
+            break;
+            
+        case 'image':
+            fieldHTML += `
+                <div class="image-picker">
+                    <input type="text" name="${field.name}" id="${field.name}" value="${value}" placeholder="Image URL or path">
+                    <div class="image-actions">
+                        <button type="button" onclick="openImageBrowser('${field.name}')" class="btn">📁 Browse Images</button>
+                        <button type="button" onclick="uploadImage('${field.name}')" class="btn btn-primary">📤 Upload New</button>
+                        ${value ? `<button type="button" onclick="clearImage('${field.name}')" class="btn btn-danger">🗑️ Clear</button>` : ''}
+                    </div>
+                    ${value ? `<div class="image-preview-container"><img src="${value}" class="image-preview" alt="Preview" onclick="previewImageFull('${value}')"></div>` : ''}
+                </div>
+            `;
+            break;
+            
+        case 'richtext':
+            fieldHTML += `
+                <div class="richtext-container">
+                    <div class="richtext-toolbar">
+                        <button type="button" onclick="formatText('${field.name}', 'bold')" class="format-btn">𝐁</button>
+                        <button type="button" onclick="formatText('${field.name}', 'italic')" class="format-btn">𝐼</button>
+                        <button type="button" onclick="formatText('${field.name}', 'heading')" class="format-btn">H</button>
+                        <button type="button" onclick="formatText('${field.name}', 'link')" class="format-btn">🔗</button>
+                        <button type="button" onclick="togglePreview('${field.name}')" class="format-btn">👁️</button>
+                    </div>
+                    <textarea name="${field.name}" id="${field.name}" placeholder="${field.placeholder || ''}" class="richtext" ${field.required ? 'required' : ''}>${value}</textarea>
+                    <div id="preview-${field.name}" class="richtext-preview hidden"></div>
+                </div>
+            `;
+            break;
+            
+        case 'object':
+            fieldHTML += `
+                <div class="object-field">
+                    <h4>${field.label}</h4>
+                    <p style="color: #666; font-style: italic;">This is a nested object. Edit its properties below.</p>
+                </div>
+            `;
+            break;
+            
+        default: // text
+            fieldHTML += `<input type="text" name="${field.name}" id="${field.name}" value="${value}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}>`;
+    }
+    
+    // Validation error container
+    fieldHTML += `<div id="error-${field.name}" class="validation-error hidden"></div>`;
+    
+    div.innerHTML = fieldHTML;
+    return div;
+}
+
+function getNestedValue(obj, path) {
+    return path.split('.').reduce((current, key) => current && current[key], obj);
+}
+
+function setNestedValue(obj, path, value) {
+    const keys = path.split('.');
+    const lastKey = keys.pop();
+    const target = keys.reduce((current, key) => {
+        if (!current[key]) current[key] = {};
+        return current[key];
+    }, obj);
+    target[lastKey] = value;
+}
+
+async function saveContent(event) {
+    event.preventDefault();
+    
+    const button = event.target.querySelector('button[type="submit"]');
+    showLoading(button);
+    
+    try {
+        const formData = new FormData(event.target);
+        const content = {};
+        
+        // Build nested object from form data
+        for (const [key, value] of formData.entries()) {
+            if (value !== '') {
+                // Handle different field types
+                const field = formSchema.fields.find(f => f.name === key);
+                let processedValue = value;
+                
+                if (field) {
+                    switch (field.type) {
+                        case 'checkbox':
+                            processedValue = true; // checkbox is only in formData if checked
+                            break;
+                        case 'number':
+                            processedValue = parseFloat(value);
+                            break;
+                        case 'multiselect':
+                            processedValue = formData.getAll(key);
+                            break;
+                    }
+                }
+                
+                setNestedValue(content, key, processedValue);
+            }
+        }
+        
+        // Handle unchecked checkboxes
+        formSchema.fields.forEach(field => {
+            if (field.type === 'checkbox' && !formData.has(field.name)) {
+                setNestedValue(content, field.name, false);
+            }
+        });
+        
+        await apiCall('/admin/content', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(content)
+        });
+        
+        showFormAlert('Content saved successfully!', 'success');
+        currentContent = content;
+        updateContentInfo();
+        
+    } catch (error) {
+        showFormAlert('Failed to save content: ' + error.message, 'error');
+    } finally {
+        hideLoading(button);
+    }
+}
+
+async function loadContent() {
+    try {
+        const response = await apiCall('/admin/content');
+        currentContent = response.data || {};
+        renderForm(formSchema.fields);
+        showFormAlert('Content reloaded successfully!', 'success');
+    } catch (error) {
+        showFormAlert('Failed to reload content: ' + error.message, 'error');
+    }
+}
+
+async function validateContent() {
+    try {
+        const formData = new FormData(document.getElementById('content-form'));
+        const content = {};
+        
+        for (const [key, value] of formData.entries()) {
+            if (value !== '') {
+                setNestedValue(content, key, value);
+            }
+        }
+        
+        const result = await apiCall('/admin/schema/validate-content', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(content)
+        });
+        
+        if (result.data.valid) {
+            showFormAlert('Content validation passed!', 'success');
+        } else {
+            showFormAlert('Content validation failed. Check the errors below.', 'error');
+            // Show field-specific errors
+            result.data.errors.forEach(error => {
+                showFieldError(error.field, error.message);
+            });
+        }
+        
+    } catch (error) {
+        showFormAlert('Validation failed: ' + error.message, 'error');
+    }
+}
+
+function resetContent() {
+    if (confirm('Are you sure you want to reset all content? This will reload the last saved version.')) {
+        loadContent();
+    }
+}
+
+function previewContent() {
+    // Open preview in new window
+    window.open('/admin/content/preview', '_blank');
+}
+
+function openImageBrowser(fieldName) {
+    // Create image browser modal
+    const modal = document.createElement('div');
+    modal.className = 'image-browser-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Select Image</h3>
+                <button onclick="closeModal()" class="btn btn-danger">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="image-grid">Loading images...</div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    loadImageGrid(fieldName);
+}
+
+async function loadImageGrid(fieldName) {
+    try {
+        // For now, show a placeholder. In Phase 6, this will load actual images
+        const grid = document.getElementById('image-grid');
+        grid.innerHTML = `
+            <div class="image-placeholder">
+                <p>Image browser will be available in Phase 6: Image Management</p>
+                <p>For now, enter image URLs directly in the field.</p>
+                <button onclick="closeModal()" class="btn btn-primary">OK</button>
+            </div>
+        `;
+    } catch (error) {
+        showFormAlert('Failed to load images: ' + error.message, 'error');
+    }
+}
+
+function uploadImage(fieldName) {
+    // Create file input
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            // For now, show placeholder. In Phase 6, this will actually upload
+            showFormAlert('Image upload will be available in Phase 6: Image Management', 'info');
+        }
+    };
+    input.click();
+}
+
+function clearImage(fieldName) {
+    const input = document.getElementById(fieldName);
+    input.value = '';
+    input.dispatchEvent(new Event('input')); // Trigger auto-save
+    
+    // Re-render the field to remove preview
+    const field = formSchema.fields.find(f => f.name === fieldName);
+    if (field) {
+        const fieldElement = input.closest('.form-field');
+        const newElement = createFieldElement(field);
+        fieldElement.parentNode.replaceChild(newElement, fieldElement);
+    }
+}
+
+function previewImageFull(imageSrc) {
+    const modal = document.createElement('div');
+    modal.className = 'image-preview-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <button onclick="closeModal()" class="btn btn-danger modal-close">✕</button>
+            <img src="${imageSrc}" alt="Full Preview" style="max-width: 90vw; max-height: 90vh;">
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function closeModal() {
+    const modals = document.querySelectorAll('.image-browser-modal, .image-preview-modal');
+    modals.forEach(modal => modal.remove());
+}
+
+function formatText(fieldName, format) {
+    const textarea = document.getElementById(fieldName);
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    
+    let formattedText = '';
+    
+    switch (format) {
+        case 'bold':
+            formattedText = `<strong>${selectedText || 'bold text'}</strong>`;
+            break;
+        case 'italic':
+            formattedText = `<em>${selectedText || 'italic text'}</em>`;
+            break;
+        case 'heading':
+            formattedText = `<h2>${selectedText || 'heading text'}</h2>`;
+            break;
+        case 'link':
+            const url = prompt('Enter URL:');
+            if (url) {
+                formattedText = `<a href="${url}">${selectedText || 'link text'}</a>`;
+            }
+            break;
+    }
+    
+    if (formattedText) {
+        textarea.value = textarea.value.substring(0, start) + formattedText + textarea.value.substring(end);
+        textarea.focus();
+        textarea.setSelectionRange(start + formattedText.length, start + formattedText.length);
+        textarea.dispatchEvent(new Event('input')); // Trigger auto-save
+    }
+}
+
+function togglePreview(fieldName) {
+    const textarea = document.getElementById(fieldName);
+    const preview = document.getElementById(`preview-${fieldName}`);
+    
+    if (preview.classList.contains('hidden')) {
+        preview.innerHTML = textarea.value;
+        preview.classList.remove('hidden');
+        textarea.style.display = 'none';
+    } else {
+        preview.classList.add('hidden');
+        textarea.style.display = 'block';
+    }
+}
+
+async function validateField(fieldName, value) {
+    try {
+        const result = await apiCall('/admin/schema/validate-field-detailed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ field_name: fieldName, value: value })
+        });
+        
+        clearFieldError(fieldName);
+        
+        if (!result.data.valid) {
+            showFieldError(fieldName, result.data.errors[0]?.message || 'Validation failed');
+        }
+        
+    } catch (error) {
+        // Validation errors are not critical for UX, so just log them
+        console.warn('Field validation failed:', error);
+    }
+}
+
+function clearFieldError(fieldName) {
+    const errorElement = document.getElementById(`error-${fieldName}`);
+    if (errorElement) {
+        errorElement.textContent = '';
+        errorElement.classList.add('hidden');
+    }
+    
+    const fieldElement = document.getElementById(fieldName);
+    if (fieldElement) {
+        fieldElement.classList.remove('error');
+    }
+}
+
+function openImagePicker(fieldName) {
+    // Legacy function for backward compatibility
+    openImageBrowser(fieldName);
+}
+
+function showFormAlert(message, type) {
+    const alertsContainer = document.getElementById('content-alerts');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type}`;
+    alert.textContent = message;
+    alertsContainer.appendChild(alert);
+    
+    setTimeout(() => alert.remove(), 5000);
+}
+
+function showFieldError(fieldName, message) {
+    const errorElement = document.getElementById(`error-${fieldName}`);
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.classList.remove('hidden');
+    }
+    
+    const fieldElement = document.getElementById(fieldName);
+    if (fieldElement) {
+        fieldElement.classList.add('error');
+    }
+}
+
+function updateContentInfo() {
+    document.getElementById('field-count').textContent = formSchema.fields ? formSchema.fields.length : 0;
+    document.getElementById('last-updated').textContent = new Date().toLocaleString();
+    document.getElementById('validation-status').textContent = 'Ready for validation';
+}
+
+// Auto-save enhancement for better UX
+function setupEnhancedAutoSave(formId, saveUrl) {
+    const form = document.getElementById(formId);
+    if (!form) return;
+    
+    let saveTimeout;
+    let lastSaveData = '';
+    const inputs = form.querySelectorAll('input, textarea, select');
+    
+    inputs.forEach(input => {
+        input.addEventListener('input', () => {
+            clearTimeout(saveTimeout);
+            
+            // Show auto-save indicator
+            showAutoSaveIndicator();
+            
+            saveTimeout = setTimeout(async () => {
+                try {
+                    const formData = new FormData(form);
+                    const content = {};
+                    
+                    // Build nested object from form data
+                    for (const [key, value] of formData.entries()) {
+                        if (value !== '') {
+                            const field = formSchema.fields.find(f => f.name === key);
+                            let processedValue = value;
+                            
+                            if (field) {
+                                switch (field.type) {
+                                    case 'checkbox':
+                                        processedValue = true;
+                                        break;
+                                    case 'number':
+                                        processedValue = parseFloat(value);
+                                        break;
+                                    case 'multiselect':
+                                        processedValue = formData.getAll(key);
+                                        break;
+                                }
+                            }
+                            
+                            setNestedValue(content, key, processedValue);
+                        }
+                    }
+                    
+                    // Handle unchecked checkboxes
+                    formSchema.fields.forEach(field => {
+                        if (field.type === 'checkbox' && !formData.has(field.name)) {
+                            setNestedValue(content, field.name, false);
+                        }
+                    });
+                    
+                    const currentData = JSON.stringify(content);
+                    if (currentData !== lastSaveData) {
+                        await apiCall(saveUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: currentData
+                        });
+                        
+                        lastSaveData = currentData;
+                        showAutoSaveSuccess();
+                    }
+                } catch (error) {
+                    showAutoSaveError(error.message);
+                }
+            }, 2000);
+        });
+    });
+}
+
+function showAutoSaveIndicator() {
+    const indicator = document.getElementById('auto-save-indicator') || createAutoSaveIndicator();
+    indicator.textContent = '💾 Auto-saving...';
+    indicator.className = 'auto-save-indicator saving';
+}
+
+function showAutoSaveSuccess() {
+    const indicator = document.getElementById('auto-save-indicator') || createAutoSaveIndicator();
+    indicator.textContent = '✅ Saved';
+    indicator.className = 'auto-save-indicator success';
+    setTimeout(() => {
+        indicator.style.opacity = '0';
+        setTimeout(() => indicator.remove(), 300);
+    }, 2000);
+}
+
+function showAutoSaveError(message) {
+    const indicator = document.getElementById('auto-save-indicator') || createAutoSaveIndicator();
+    indicator.textContent = '❌ Auto-save failed';
+    indicator.className = 'auto-save-indicator error';
+    setTimeout(() => indicator.remove(), 5000);
+}
+
+function createAutoSaveIndicator() {
+    const indicator = document.createElement('div');
+    indicator.id = 'auto-save-indicator';
+    indicator.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        font-size: 0.875rem;
+        z-index: 1001;
+        transition: opacity 0.3s;
+    `;
+    document.body.appendChild(indicator);
+    return indicator;
+}
+
+// Load form when page loads
+document.addEventListener('DOMContentLoaded', loadContentForm);
+</script>

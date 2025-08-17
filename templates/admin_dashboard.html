@@ -1,0 +1,130 @@
+<h1 class="page-title">Dashboard</h1>
+<p class="page-subtitle">Welcome to your OnePage CMS admin panel</p>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{.Stats.ContentFields}}</div>
+        <div class="stat-label">Content Fields</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{.Stats.Images}}</div>
+        <div class="stat-label">Uploaded Images</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{.Stats.LastUpdated}}</div>
+        <div class="stat-label">Last Updated</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{.Stats.SchemaVersion}}</div>
+        <div class="stat-label">Schema Version</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">🚀 Quick Actions</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        <a href="/admin/content" class="btn btn-primary" style="text-align: center; padding: 1rem;">
+            📝 Edit Content
+        </a>
+        <a href="/admin/images" class="btn btn-success" style="text-align: center; padding: 1rem;">
+            🖼️ Manage Images
+        </a>
+        <a href="/admin/schema" class="btn btn-primary" style="text-align: center; padding: 1rem;">
+            📋 Edit Schema
+        </a>
+        <a href="/admin/template" class="btn btn-primary" style="text-align: center; padding: 1rem;">
+            🎨 Edit Template
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">📊 System Status</div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>Status</th>
+                <th>Last Modified</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Content Data</td>
+                <td><span style="color: #28a745;">✅ Ready</span></td>
+                <td>{{.Status.ContentModified}}</td>
+                <td>
+                    <a href="/admin/content/info" class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">View Info</a>
+                </td>
+            </tr>
+            <tr>
+                <td>JSON Schema</td>
+                <td><span style="color: #28a745;">✅ Valid</span></td>
+                <td>{{.Status.SchemaModified}}</td>
+                <td>
+                    <a href="/admin/schema/info" class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">View Info</a>
+                </td>
+            </tr>
+            <tr>
+                <td>HTML Template</td>
+                <td><span style="color: #28a745;">✅ Ready</span></td>
+                <td>{{.Status.TemplateModified}}</td>
+                <td>
+                    <a href="/admin/template/info" class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">View Info</a>
+                </td>
+            </tr>
+            <tr>
+                <td>Generated Site</td>
+                <td><span style="color: #ffc107;">⏳ Pending</span></td>
+                <td>{{.Status.SiteGenerated}}</td>
+                <td>
+                    <button onclick="generateSite()" class="btn btn-success" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">Generate Now</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-header">📝 Recent Activity</div>
+    <div id="recent-activity">
+        {{range .RecentActivity}}
+        <div style="padding: 0.5rem 0; border-bottom: 1px solid #eee;">
+            <strong>{{.Action}}</strong> - {{.Timestamp}}
+            <br><small style="color: #666;">{{.Description}}</small>
+        </div>
+        {{else}}
+        <p style="color: #666; font-style: italic;">No recent activity</p>
+        {{end}}
+    </div>
+</div>
+
+<script>
+async function generateSite() {
+    const button = event.target;
+    showLoading(button);
+    
+    try {
+        const result = await apiCall('/admin/generate', { method: 'POST' });
+        showAlert('Site generated successfully!', 'success');
+        // Refresh page to update status
+        setTimeout(() => location.reload(), 1000);
+    } catch (error) {
+        showAlert('Failed to generate site: ' + error.message, 'error');
+    } finally {
+        hideLoading(button);
+    }
+}
+
+// Load dashboard data on page load
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const stats = await apiCall('/admin/api/stats');
+        // Update stats display if needed
+        console.log('Dashboard stats:', stats);
+    } catch (error) {
+        console.error('Failed to load dashboard stats:', error);
+    }
+});
+</script>

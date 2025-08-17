@@ -22,6 +22,10 @@ func (s *Server) setupRoutes() {
 
 	// Protected admin routes
 	s.Mux.HandleFunc("/admin", s.AuthManager.RequireAuth(s.handleAdminPanel))
+	s.Mux.HandleFunc("/admin/content", s.AuthManager.RequireAuth(s.handleAdminContent))
+	s.Mux.HandleFunc("/admin/api/stats", s.AuthManager.RequireAuth(s.handleAPIStats))
+	s.Mux.HandleFunc("/admin/api/generate", s.AuthManager.RequireAuth(s.handleAPIGenerate))
+	s.Mux.HandleFunc("/admin/api/status", s.AuthManager.RequireAuth(s.handleAPIStatus))
 
 	// File management test endpoints (protected)
 	s.Mux.HandleFunc("/admin/files", s.AuthManager.RequireAuth(s.handleFilesList))
@@ -34,11 +38,12 @@ func (s *Server) setupRoutes() {
 	s.Mux.HandleFunc("/admin/test-template", s.AuthManager.RequireAuth(s.handleTestTemplate))
 
 	// Content management endpoints (protected)
-	s.Mux.HandleFunc("/admin/content", s.AuthManager.RequireAuth(s.handleContent))
 	s.Mux.HandleFunc("/admin/content/info", s.AuthManager.RequireAuth(s.handleContentInfo))
 	s.Mux.HandleFunc("/admin/content/restore", s.AuthManager.RequireAuth(s.handleContentRestore))
 	s.Mux.HandleFunc("/admin/content/export", s.AuthManager.RequireAuth(s.handleContentExport))
 	s.Mux.HandleFunc("/admin/content/import", s.AuthManager.RequireAuth(s.handleContentImport))
+	s.Mux.HandleFunc("/admin/content/auto-save", s.AuthManager.RequireAuth(s.handleContentAutoSave))
+	s.Mux.HandleFunc("/admin/content/preview", s.AuthManager.RequireAuth(s.handlePreviewContent))
 	s.Mux.HandleFunc("/admin/test-content", s.AuthManager.RequireAuth(s.handleTestContent))
 
 	// Schema management endpoints (protected)
@@ -78,6 +83,11 @@ func (s *Server) setupRoutes() {
 	log.Println("  GET  /admin          - Admin panel")
 	log.Println("  POST /admin/login    - Admin login")
 	log.Println("  POST /admin/logout   - Admin logout")
+	log.Println("  GET  /admin          - Admin dashboard")
+	log.Println("  GET/POST /admin/content - Content editor interface")
+	log.Println("  GET  /admin/api/stats - Dashboard statistics API")
+	log.Println("  POST /admin/api/generate - Site generation API")
+	log.Println("  GET  /admin/api/status - System status API")
 	log.Println("  GET  /admin/files    - List files (test)")
 	log.Println("  POST /admin/test-storage - Test storage operations")
 	log.Println("  GET/POST /admin/template - Template management")
@@ -89,6 +99,8 @@ func (s *Server) setupRoutes() {
 	log.Println("  POST /admin/content/restore - Restore content")
 	log.Println("  GET  /admin/content/export - Export content")
 	log.Println("  POST /admin/content/import - Import content")
+	log.Println("  POST /admin/content/auto-save - Auto-save content")
+	log.Println("  GET  /admin/content/preview - Preview content")
 	log.Println("  POST /admin/test-content - Test content operations")
 	log.Println("  GET/POST /admin/schema - Schema management")
 	log.Println("  GET  /admin/schema/info - Schema information")
