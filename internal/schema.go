@@ -396,3 +396,107 @@ func (sm *SchemaManager) createFormFieldFromProperty(name string, prop map[strin
 
 	return field
 }
+
+// ParseSchemaDetailed returns comprehensive schema analysis using the schema parser
+func (sm *SchemaManager) ParseSchemaDetailed() (*SchemaAnalysis, error) {
+	schema, err := sm.LoadSchema()
+	if err != nil {
+		return nil, err
+	}
+
+	parser := NewSchemaParser(schema)
+	return parser.ParseSchema()
+}
+
+// GetFieldMetadata returns detailed metadata for a specific field
+func (sm *SchemaManager) GetFieldMetadata(fieldName string) (*ParsedProperty, error) {
+	schema, err := sm.LoadSchema()
+	if err != nil {
+		return nil, err
+	}
+
+	parser := NewSchemaParser(schema)
+	return parser.GetFieldMetadata(fieldName)
+}
+
+// GetValidationRules returns all validation rules for the schema
+func (sm *SchemaManager) GetValidationRules() ([]ValidationRule, error) {
+	analysis, err := sm.ParseSchemaDetailed()
+	if err != nil {
+		return nil, err
+	}
+
+	return analysis.ValidationRules, nil
+}
+
+// ValidateFieldValue validates a single field value against the schema
+func (sm *SchemaManager) ValidateFieldValue(fieldName string, value interface{}) ([]ValidationRule, error) {
+	schema, err := sm.LoadSchema()
+	if err != nil {
+		return nil, err
+	}
+
+	parser := NewSchemaParser(schema)
+	failures := parser.ValidateFieldValue(fieldName, value)
+	return failures, nil
+}
+
+// GetSchemaFieldTypes returns a map of field names to their types
+func (sm *SchemaManager) GetSchemaFieldTypes() (map[string]string, error) {
+	analysis, err := sm.ParseSchemaDetailed()
+	if err != nil {
+		return nil, err
+	}
+
+	return analysis.PropertyTypes, nil
+}
+
+// GetRequiredFields returns list of required field names
+func (sm *SchemaManager) GetRequiredFields() ([]string, error) {
+	analysis, err := sm.ParseSchemaDetailed()
+	if err != nil {
+		return nil, err
+	}
+
+	return analysis.RequiredFields, nil
+}
+
+// GetOptionalFields returns list of optional field names
+func (sm *SchemaManager) GetOptionalFields() ([]string, error) {
+	analysis, err := sm.ParseSchemaDetailed()
+	if err != nil {
+		return nil, err
+	}
+
+	return analysis.OptionalFields, nil
+}
+
+// GetNestedObjects returns list of fields that are nested objects
+func (sm *SchemaManager) GetNestedObjects() ([]string, error) {
+	analysis, err := sm.ParseSchemaDetailed()
+	if err != nil {
+		return nil, err
+	}
+
+	return analysis.NestedObjects, nil
+}
+
+// GetArrayFields returns list of fields that are arrays
+func (sm *SchemaManager) GetArrayFields() ([]string, error) {
+	analysis, err := sm.ParseSchemaDetailed()
+	if err != nil {
+		return nil, err
+	}
+
+	return analysis.Arrays, nil
+}
+
+// GetEnumFields returns map of field names to their enum values
+func (sm *SchemaManager) GetEnumFields() (map[string][]interface{}, error) {
+	analysis, err := sm.ParseSchemaDetailed()
+	if err != nil {
+		return nil, err
+	}
+
+	return analysis.EnumFields, nil
+}

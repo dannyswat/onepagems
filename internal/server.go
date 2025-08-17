@@ -85,6 +85,14 @@ func (s *Server) setupRoutes() {
 	s.Mux.HandleFunc("/admin/schema/form", s.AuthManager.RequireAuth(s.handleSchemaForm))
 	s.Mux.HandleFunc("/admin/test-schema", s.AuthManager.RequireAuth(s.handleTestSchema))
 
+	// Schema parser endpoints (protected)
+	s.Mux.HandleFunc("/admin/schema/analyze", s.AuthManager.RequireAuth(s.handleSchemaAnalyze))
+	s.Mux.HandleFunc("/admin/schema/field-metadata", s.AuthManager.RequireAuth(s.handleSchemaFieldMetadata))
+	s.Mux.HandleFunc("/admin/schema/validation-rules", s.AuthManager.RequireAuth(s.handleSchemaValidationRules))
+	s.Mux.HandleFunc("/admin/schema/field-types", s.AuthManager.RequireAuth(s.handleSchemaFieldTypes))
+	s.Mux.HandleFunc("/admin/schema/required-fields", s.AuthManager.RequireAuth(s.handleSchemaRequiredFields))
+	s.Mux.HandleFunc("/admin/schema/validate-field", s.AuthManager.RequireAuth(s.handleSchemaValidateField))
+
 	// Authentication status endpoints (protected)
 	s.Mux.HandleFunc("/admin/auth/status", s.AuthManager.RequireAuth(s.handleAuthStatus))
 	s.Mux.HandleFunc("/admin/auth/sessions", s.AuthManager.RequireAuth(s.handleAuthSessions))
@@ -118,6 +126,12 @@ func (s *Server) setupRoutes() {
 	log.Println("  POST /admin/schema/validate - Validate data against schema")
 	log.Println("  GET  /admin/schema/form - Generate form from schema")
 	log.Println("  POST /admin/test-schema - Test schema operations")
+	log.Println("  GET  /admin/schema/analyze - Comprehensive schema analysis")
+	log.Println("  GET  /admin/schema/field-metadata - Get field metadata (query: field)")
+	log.Println("  GET  /admin/schema/validation-rules - Get all validation rules")
+	log.Println("  GET  /admin/schema/field-types - Get field types mapping")
+	log.Println("  GET  /admin/schema/required-fields - Get required/optional fields")
+	log.Println("  POST /admin/schema/validate-field - Validate single field value")
 	log.Println("  GET  /admin/auth/status - Authentication status")
 	log.Println("  GET  /admin/auth/sessions - List active sessions")
 	log.Println("  POST /admin/auth/change-password - Change password")
@@ -1374,4 +1388,150 @@ func (s *Server) handleTestSchema(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// handleSchemaAnalyze returns comprehensive schema analysis
+func (s *Server) handleSchemaAnalyze(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	analysis, err := s.SchemaManager.ParseSchemaDetailed()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to analyze schema: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(analysis)
+}
+
+// handleSchemaFieldMetadata returns metadata for a specific field
+func (s *Server) handleSchemaFieldMetadata(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	fieldName := r.URL.Query().Get("field")
+	if fieldName == "" {
+		http.Error(w, "Field name is required", http.StatusBadRequest)
+		return
+	}
+
+	metadata, err := s.SchemaManager.GetFieldMetadata(fieldName)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get field metadata: %v", err), http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(metadata)
+}
+
+// handleSchemaValidationRules returns all validation rules for the schema
+func (s *Server) handleSchemaValidationRules(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	rules, err := s.SchemaManager.GetValidationRules()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get validation rules: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"rules": rules,
+		"count": len(rules),
+	})
+}
+
+// handleSchemaFieldTypes returns field types mapping
+func (s *Server) handleSchemaFieldTypes(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	fieldTypes, err := s.SchemaManager.GetSchemaFieldTypes()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get field types: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"field_types": fieldTypes,
+		"count":       len(fieldTypes),
+	})
+}
+
+// handleSchemaRequiredFields returns required and optional fields
+func (s *Server) handleSchemaRequiredFields(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	requiredFields, err := s.SchemaManager.GetRequiredFields()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get required fields: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	optionalFields, err := s.SchemaManager.GetOptionalFields()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get optional fields: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"required": requiredFields,
+		"optional": optionalFields,
+		"total":    len(requiredFields) + len(optionalFields),
+	})
+}
+
+// handleSchemaValidateField validates a field value against schema
+func (s *Server) handleSchemaValidateField(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var requestData struct {
+		FieldName string      `json:"field_name"`
+		Value     interface{} `json:"value"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+		return
+	}
+
+	if requestData.FieldName == "" {
+		http.Error(w, "Field name is required", http.StatusBadRequest)
+		return
+	}
+
+	validationFailures, err := s.SchemaManager.ValidateFieldValue(requestData.FieldName, requestData.Value)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to validate field: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	isValid := len(validationFailures) == 0
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"valid":    isValid,
+		"failures": validationFailures,
+		"field":    requestData.FieldName,
+		"value":    requestData.Value,
+	})
 }

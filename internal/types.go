@@ -153,7 +153,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		Port:           "8080",
 		AdminUsername:  "admin",
-		AdminPassword:  "", // Will be set to hashed "admin123" in ValidateConfig
+		AdminPassword:  "",              // Will be set to hashed "admin123" in ValidateConfig
 		UploadMaxSize:  5 * 1024 * 1024, // 5MB
 		SessionTimeout: 60,              // 60 minutes
 		DataDir:        "./data",
