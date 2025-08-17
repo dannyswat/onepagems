@@ -1,9 +1,11 @@
-package internal
+package managers
 
 import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"onepagems/internal/types"
 )
 
 // ContentManager handles content.json operations
@@ -26,7 +28,7 @@ func (cm *ContentManager) contentFilePath() string {
 }
 
 // LoadContent loads content from content.json or creates default if not exists
-func (cm *ContentManager) LoadContent() (*ContentData, error) {
+func (cm *ContentManager) LoadContent() (*types.ContentData, error) {
 	contentFilename := cm.contentFilePath()
 
 	// Check if content.json exists
@@ -40,7 +42,7 @@ func (cm *ContentManager) LoadContent() (*ContentData, error) {
 	}
 
 	// Load existing content
-	var content ContentData
+	var content types.ContentData
 	if err := cm.storage.ReadJSONFile(contentFilename, &content); err != nil {
 		return nil, fmt.Errorf("failed to read content file: %w", err)
 	}
@@ -54,7 +56,7 @@ func (cm *ContentManager) LoadContent() (*ContentData, error) {
 }
 
 // SaveContent saves content to content.json with backup
-func (cm *ContentManager) SaveContent(content *ContentData) error {
+func (cm *ContentManager) SaveContent(content *types.ContentData) error {
 	if content == nil {
 		return fmt.Errorf("content cannot be nil")
 	}
@@ -151,8 +153,8 @@ func (cm *ContentManager) GetContentSummary() (map[string]interface{}, error) {
 }
 
 // createDefaultContent creates default content structure
-func (cm *ContentManager) createDefaultContent() *ContentData {
-	return &ContentData{
+func (cm *ContentManager) createDefaultContent() *types.ContentData {
+	return &types.ContentData{
 		Title:       "Welcome to OnePage CMS",
 		Description: "A simple, lightweight content management system",
 		Sections: map[string]interface{}{
@@ -177,7 +179,7 @@ func (cm *ContentManager) createDefaultContent() *ContentData {
 }
 
 // validateContent validates the content structure
-func (cm *ContentManager) validateContent(content *ContentData) error {
+func (cm *ContentManager) validateContent(content *types.ContentData) error {
 	if content == nil {
 		return fmt.Errorf("content cannot be nil")
 	}
@@ -217,7 +219,7 @@ func (cm *ContentManager) ExportContent() ([]byte, error) {
 
 // ImportContent imports content from JSON data
 func (cm *ContentManager) ImportContent(data []byte) error {
-	var content ContentData
+	var content types.ContentData
 	if err := json.Unmarshal(data, &content); err != nil {
 		return fmt.Errorf("failed to parse imported content: %w", err)
 	}

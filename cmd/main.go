@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"onepagems/internal"
+	"onepagems/internal/server"
 )
 
 func main() {
@@ -25,10 +26,10 @@ func main() {
 	log.Printf("  Admin username: %s", config.AdminUsername)
 
 	// Create and start server
-	server := internal.NewServer(config)
+	srv := server.NewServer(config)
 
 	log.Println("OnePage CMS server starting...")
-	if err := server.Start(); err != nil {
+	if err := srv.Start(); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }

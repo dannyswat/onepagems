@@ -1,4 +1,4 @@
-package internal
+package managers
 
 import (
 	"crypto/rand"
@@ -6,25 +6,26 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"onepagems/internal/types"
 	"time"
 )
 
 // AuthManager handles authentication and session management
 type AuthManager struct {
-	sessions map[string]*Session
-	config   *Config
+	sessions map[string]*types.Session
+	config   *types.Config
 }
 
 // NewAuthManager creates a new authentication manager
-func NewAuthManager(config *Config) *AuthManager {
+func NewAuthManager(config *types.Config) *AuthManager {
 	return &AuthManager{
-		sessions: make(map[string]*Session),
+		sessions: make(map[string]*types.Session),
 		config:   config,
 	}
 }
 
 // Login authenticates a user and creates a session
-func (am *AuthManager) Login(username, password string) (*Session, error) {
+func (am *AuthManager) Login(username, password string) (*types.Session, error) {
 	// Hash the provided password
 	hashedPassword := am.hashPassword(password)
 
@@ -39,7 +40,7 @@ func (am *AuthManager) Login(username, password string) (*Session, error) {
 		return nil, fmt.Errorf("failed to generate session ID: %w", err)
 	}
 
-	session := &Session{
+	session := &types.Session{
 		ID:        sessionID,
 		Username:  username,
 		CreatedAt: time.Now(),
@@ -62,7 +63,7 @@ func (am *AuthManager) Logout(sessionID string) error {
 }
 
 // ValidateSession checks if a session is valid and active
-func (am *AuthManager) ValidateSession(sessionID string) (*Session, error) {
+func (am *AuthManager) ValidateSession(sessionID string) (*types.Session, error) {
 	session, exists := am.sessions[sessionID]
 	if !exists {
 		return nil, fmt.Errorf("session not found")
@@ -85,7 +86,7 @@ func (am *AuthManager) ValidateSession(sessionID string) (*Session, error) {
 }
 
 // GetSessionFromRequest extracts session ID from HTTP request
-func (am *AuthManager) GetSessionFromRequest(r *http.Request) (*Session, error) {
+func (am *AuthManager) GetSessionFromRequest(r *http.Request) (*types.Session, error) {
 	// Try to get session ID from cookie first
 	cookie, err := r.Cookie("session_id")
 	if err == nil {
@@ -116,7 +117,7 @@ func (am *AuthManager) RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		// Add session to request context
-		r = r.WithContext(SessionContext(r.Context(), session))
+		r = r.WithContext(types.SessionContext(r.Context(), session))
 		next(w, r)
 	}
 }
@@ -162,9 +163,9 @@ func (am *AuthManager) GetActiveSessions() int {
 }
 
 // ListSessions returns all active sessions (for admin purposes)
-func (am *AuthManager) ListSessions() []*Session {
+func (am *AuthManager) ListSessions() []*types.Session {
 	am.CleanupExpiredSessions()
-	sessions := make([]*Session, 0, len(am.sessions))
+	sessions := make([]*types.Session, 0, len(am.sessions))
 	for _, session := range am.sessions {
 		sessions = append(sessions, session)
 	}

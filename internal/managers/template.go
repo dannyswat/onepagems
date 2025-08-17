@@ -1,10 +1,12 @@
-package internal
+package managers
 
 import (
 	"fmt"
 	"html/template"
 	"strings"
 	"time"
+
+	t "onepagems/internal/types"
 )
 
 // TemplateManager handles template operations
@@ -396,7 +398,7 @@ func (tm *TemplateManager) GetDefaultTemplate() string {
 }
 
 // GetTemplateInfo returns information about the current template
-func (tm *TemplateManager) GetTemplateInfo() (*FileInfo, error) {
+func (tm *TemplateManager) GetTemplateInfo() (*t.FileInfo, error) {
 	const filename = "template.html"
 
 	if !tm.storage.FileExists(filename) {
@@ -422,7 +424,7 @@ func (tm *TemplateManager) GetTemplateInfo() (*FileInfo, error) {
 		backupAge = &age
 	}
 
-	return &FileInfo{
+	return &t.FileInfo{
 		Path:        tm.storage.GetFilePath(filename),
 		Name:        filename,
 		Size:        size,

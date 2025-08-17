@@ -1,8 +1,9 @@
-package internal
+package managers
 
 import (
 	"encoding/json"
 	"fmt"
+	"onepagems/internal/types"
 )
 
 // SchemaManager handles schema.json operations
@@ -25,7 +26,7 @@ func (sm *SchemaManager) schemaFilePath() string {
 }
 
 // LoadSchema loads schema from schema.json or creates default if not exists
-func (sm *SchemaManager) LoadSchema() (*SchemaData, error) {
+func (sm *SchemaManager) LoadSchema() (*types.SchemaData, error) {
 	schemaFilename := sm.schemaFilePath()
 
 	// Check if schema.json exists
@@ -39,7 +40,7 @@ func (sm *SchemaManager) LoadSchema() (*SchemaData, error) {
 	}
 
 	// Load existing schema
-	var schema SchemaData
+	var schema types.SchemaData
 	if err := sm.storage.ReadJSONFile(schemaFilename, &schema); err != nil {
 		return nil, fmt.Errorf("failed to read schema file: %w", err)
 	}
@@ -53,7 +54,7 @@ func (sm *SchemaManager) LoadSchema() (*SchemaData, error) {
 }
 
 // SaveSchema saves schema to schema.json with backup
-func (sm *SchemaManager) SaveSchema(schema *SchemaData) error {
+func (sm *SchemaManager) SaveSchema(schema *types.SchemaData) error {
 	if schema == nil {
 		return fmt.Errorf("schema cannot be nil")
 	}
@@ -187,8 +188,8 @@ func (sm *SchemaManager) ValidateAgainstSchema(data interface{}) error {
 }
 
 // createDefaultSchema creates a default JSON schema structure for content
-func (sm *SchemaManager) createDefaultSchema() *SchemaData {
-	return &SchemaData{
+func (sm *SchemaManager) createDefaultSchema() *types.SchemaData {
+	return &types.SchemaData{
 		Schema: "https://json-schema.org/draft/2020-12/schema",
 		Type:   "object",
 		Properties: map[string]interface{}{
@@ -287,7 +288,7 @@ func (sm *SchemaManager) createDefaultSchema() *SchemaData {
 }
 
 // validateSchema validates the schema structure
-func (sm *SchemaManager) validateSchema(schema *SchemaData) error {
+func (sm *SchemaManager) validateSchema(schema *types.SchemaData) error {
 	if schema == nil {
 		return fmt.Errorf("schema cannot be nil")
 	}
@@ -319,7 +320,7 @@ func (sm *SchemaManager) ExportSchema() ([]byte, error) {
 
 // ImportSchema imports schema from JSON data
 func (sm *SchemaManager) ImportSchema(data []byte) error {
-	var schema SchemaData
+	var schema types.SchemaData
 	if err := json.Unmarshal(data, &schema); err != nil {
 		return fmt.Errorf("failed to parse imported schema: %w", err)
 	}
@@ -328,13 +329,13 @@ func (sm *SchemaManager) ImportSchema(data []byte) error {
 }
 
 // GenerateFormFromSchema generates form field definitions from the schema
-func (sm *SchemaManager) GenerateFormFromSchema() ([]FormField, error) {
+func (sm *SchemaManager) GenerateFormFromSchema() ([]types.FormField, error) {
 	schema, err := sm.LoadSchema()
 	if err != nil {
 		return nil, err
 	}
 
-	var fields []FormField
+	var fields []types.FormField
 
 	// Generate fields from schema properties
 	for propName, propData := range schema.Properties {
@@ -347,9 +348,9 @@ func (sm *SchemaManager) GenerateFormFromSchema() ([]FormField, error) {
 	return fields, nil
 }
 
-// createFormFieldFromProperty creates a form field from a schema property
-func (sm *SchemaManager) createFormFieldFromProperty(name string, prop map[string]interface{}) FormField {
-	field := FormField{
+// createtypes.FormFieldFromProperty creates a form field from a schema property
+func (sm *SchemaManager) createFormFieldFromProperty(name string, prop map[string]interface{}) types.FormField {
+	field := types.FormField{
 		Name: name,
 		Type: "text", // default
 	}

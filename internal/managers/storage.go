@@ -1,4 +1,4 @@
-package internal
+package managers
 
 import (
 	"encoding/json"
@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"onepagems/internal/types"
 )
 
 // FileStorage handles all file operations for the CMS
@@ -207,7 +209,7 @@ func (fs *FileStorage) RestoreFromBackup(filename string) error {
 }
 
 // GetBackupInfo returns information about a backup file
-func (fs *FileStorage) GetBackupInfo(filename string) (*FileBackup, error) {
+func (fs *FileStorage) GetBackupInfo(filename string) (*types.FileBackup, error) {
 	sourcePath := fs.GetFilePath(filename)
 	backupPath := sourcePath + ".bak"
 
@@ -220,7 +222,7 @@ func (fs *FileStorage) GetBackupInfo(filename string) (*FileBackup, error) {
 		return nil, fmt.Errorf("failed to get backup file info: %w", err)
 	}
 
-	return &FileBackup{
+	return &types.FileBackup{
 		OriginalPath: sourcePath,
 		BackupPath:   backupPath,
 		CreatedAt:    info.ModTime(),
@@ -229,13 +231,13 @@ func (fs *FileStorage) GetBackupInfo(filename string) (*FileBackup, error) {
 }
 
 // ListFiles returns a list of files in the data directory with their info
-func (fs *FileStorage) ListFiles() ([]FileInfo, error) {
+func (fs *FileStorage) ListFiles() ([]types.FileInfo, error) {
 	entries, err := os.ReadDir(fs.dataDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read data directory: %w", err)
 	}
 
-	var files []FileInfo
+	var files []types.FileInfo
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -261,7 +263,7 @@ func (fs *FileStorage) ListFiles() ([]FileInfo, error) {
 			backupAge = &age
 		}
 
-		fileInfo := FileInfo{
+		fileInfo := types.FileInfo{
 			Path:        filepath.Join(fs.dataDir, entry.Name()),
 			Name:        entry.Name(),
 			Size:        info.Size(),

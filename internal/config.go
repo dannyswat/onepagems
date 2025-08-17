@@ -5,11 +5,13 @@ import (
 	"encoding/hex"
 	"os"
 	"strconv"
+
+	"onepagems/internal/types"
 )
 
 // LoadConfig loads configuration from environment variables with defaults
-func LoadConfig() *Config {
-	config := DefaultConfig()
+func LoadConfig() *types.Config {
+	config := types.DefaultConfig()
 
 	// Load from environment variables
 	if port := os.Getenv("PORT"); port != "" {
@@ -53,7 +55,7 @@ func LoadConfig() *Config {
 }
 
 // ValidateConfig validates the configuration
-func ValidateConfig(config *Config) error {
+func ValidateConfig(config *types.Config) error {
 	// Basic validation - can be expanded later
 	if config.Port == "" {
 		config.Port = "8080"

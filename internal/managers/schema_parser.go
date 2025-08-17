@@ -1,19 +1,21 @@
-package internal
+package managers
 
 import (
 	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
+
+	"onepagems/internal/types"
 )
 
 // SchemaParser handles parsing and analysis of JSON Schema definitions
 type SchemaParser struct {
-	schema *SchemaData
+	schema *types.SchemaData
 }
 
 // NewSchemaParser creates a new schema parser
-func NewSchemaParser(schema *SchemaData) *SchemaParser {
+func NewSchemaParser(schema *types.SchemaData) *SchemaParser {
 	return &SchemaParser{
 		schema: schema,
 	}

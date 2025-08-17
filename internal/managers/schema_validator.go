@@ -1,8 +1,9 @@
-package internal
+package managers
 
 import (
 	"encoding/json"
 	"fmt"
+	"onepagems/internal/types"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -12,12 +13,12 @@ import (
 
 // SchemaValidator handles comprehensive validation of content against JSON schema
 type SchemaValidator struct {
-	schema *SchemaData
+	schema *types.SchemaData
 	parser *SchemaParser
 }
 
 // NewSchemaValidator creates a new schema validator
-func NewSchemaValidator(schema *SchemaData) *SchemaValidator {
+func NewSchemaValidator(schema *types.SchemaData) *SchemaValidator {
 	return &SchemaValidator{
 		schema: schema,
 		parser: NewSchemaParser(schema),
@@ -26,11 +27,11 @@ func NewSchemaValidator(schema *SchemaData) *SchemaValidator {
 
 // ValidationResult represents the result of content validation
 type ValidationResult struct {
-	Valid      bool                    `json:"valid"`
-	Errors     []ValidationDetailError `json:"errors"`
-	Warnings   []ValidationWarning     `json:"warnings,omitempty"`
-	FieldCount int                     `json:"field_count"`
-	Summary    string                  `json:"summary"`
+	Valid      bool                      `json:"valid"`
+	Errors     []ValidationDetailError   `json:"errors"`
+	Warnings   []types.ValidationWarning `json:"warnings,omitempty"`
+	FieldCount int                       `json:"field_count"`
+	Summary    string                    `json:"summary"`
 }
 
 // ValidationDetailError represents a validation error with detailed information
@@ -48,7 +49,7 @@ func (sv *SchemaValidator) ValidateContent(content interface{}) *ValidationResul
 	result := &ValidationResult{
 		Valid:    true,
 		Errors:   make([]ValidationDetailError, 0),
-		Warnings: make([]ValidationWarning, 0),
+		Warnings: make([]types.ValidationWarning, 0),
 	}
 
 	// Validate that content is an object if schema type is object
@@ -102,7 +103,7 @@ func (sv *SchemaValidator) validateObject(obj map[string]interface{}, path strin
 		} else {
 			// Check if additional properties are allowed
 			// For now, we'll allow additional properties but add a warning
-			result.Warnings = append(result.Warnings, ValidationWarning{
+			result.Warnings = append(result.Warnings, types.ValidationWarning{
 				Field:   fieldPath,
 				Code:    "additional_property",
 				Message: fmt.Sprintf("Field '%s' is not defined in schema but is allowed", fieldName),
@@ -528,7 +529,7 @@ func (sv *SchemaValidator) validatePattern(fieldName string, value interface{}, 
 
 	matched, err := regexp.MatchString(pattern, str)
 	if err != nil {
-		result.Warnings = append(result.Warnings, ValidationWarning{
+		result.Warnings = append(result.Warnings, types.ValidationWarning{
 			Field:   fieldName,
 			Code:    "invalid_pattern",
 			Message: fmt.Sprintf("Invalid regex pattern for field '%s': %s", fieldName, err.Error()),
@@ -574,7 +575,7 @@ func (sv *SchemaValidator) ValidateFieldValue(fieldName string, value interface{
 	result := &ValidationResult{
 		Valid:    true,
 		Errors:   make([]ValidationDetailError, 0),
-		Warnings: make([]ValidationWarning, 0),
+		Warnings: make([]types.ValidationWarning, 0),
 	}
 
 	// Find the field schema
@@ -583,7 +584,7 @@ func (sv *SchemaValidator) ValidateFieldValue(fieldName string, value interface{
 			sv.validateField(fieldName, value, propMap, fieldName, result)
 		}
 	} else {
-		result.Warnings = append(result.Warnings, ValidationWarning{
+		result.Warnings = append(result.Warnings, types.ValidationWarning{
 			Field:   fieldName,
 			Code:    "unknown_field",
 			Message: fmt.Sprintf("Field '%s' is not defined in schema", fieldName),
